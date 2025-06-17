@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Image, StyleSheet, TextInput, Dimensions, TouchableOpacity, Modal } from 'react-native';
+import { View, Text, ScrollView, TextInput, Dimensions, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { IconButton } from 'react-native-paper';
@@ -20,35 +20,14 @@ const getImcClassification = (imc) => {
 const Nutricao = () => {
   const [submittedData, setSubmittedData] = useState([]);
   const [editIndex, setEditIndex] = useState(-1);
-  const [touchedFields, setTouchedFields] = useState({});
-  const [childrenList, setChildrenList] = useState([]);
-  const [modalVisible, setModalVisible] = useState(false);
 
-  // Buscar crianças cadastradas do AsyncStorage
   useEffect(() => {
-    const fetchChildren = async () => {
-      try {
-        const storedChildren = await AsyncStorage.getItem('user_data');
-        if (storedChildren) {
-          setChildrenList(JSON.parse(storedChildren));
-        }
-      } catch (error) {
-        console.error('Erro ao buscar crianças:', error);
-      }
-    };
-    
-    fetchChildren();
-    
-    // Buscar dados nutricionais existentes
     const fetchNutritionData = async () => {
       const stored = await AsyncStorage.getItem('child_data');
       if (stored) setSubmittedData(JSON.parse(stored));
     };
     fetchNutritionData();
   }, []);
-
-  const handleFieldFocus = (field) => setTouchedFields({ ...touchedFields, [field]: false });
-  const handleFieldBlur = (field) => setTouchedFields({ ...touchedFields, [field]: true });
 
   const validationSchema = yup.object().shape({
     nome: yup.string().required('Campo obrigatório'),
@@ -88,11 +67,6 @@ const Nutricao = () => {
     setSubmittedData(newData);
   };
 
-  const selectChild = (child) => {
-    formik.setFieldValue('nome', child.responsibleName);
-    setModalVisible(false);
-  };
-
   const imcData = submittedData.map(({ peso, altura }) => {
     const pesoNum = parseFloat(peso);
     const alturaNum = parseFloat(altura);
@@ -106,39 +80,12 @@ const Nutricao = () => {
         <Text style={styles.title}>Cadastro Nutricional</Text>
 
         <Text style={styles.label}>Nome:</Text>
-        <TouchableOpacity 
-          style={styles.input} 
-          onPress={() => setModalVisible(true)}
-        >
-          <Text>{formik.values.nome || 'Selecione uma criança'}</Text>
-        </TouchableOpacity>
-
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={modalVisible}
-          onRequestClose={() => setModalVisible(false)}
-        >
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Selecione uma criança</Text>
-              {childrenList.map((child, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={styles.childItem}
-                  onPress={() => selectChild(child)}
-                >
-                  <Text>{child.responsibleName}</Text>
-                </TouchableOpacity>
-              ))}
-              <Button 
-                title="Fechar" 
-                onPress={() => setModalVisible(false)}
-                style={{ marginTop: 20 }}
-              />
-            </View>
-          </View>
-        </Modal>
+        <TextInput
+          style={styles.input}
+          placeholder="Digite o nome da criança"
+          value={formik.values.nome}
+          onChangeText={formik.handleChange('nome')}
+        />
 
         <Text style={styles.label}>Peso (kg):</Text>
         <TextInputMask
@@ -243,29 +190,6 @@ const styles = StyleSheet.create({
   },
   cardTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 8 },
   cardButtons: { flexDirection: 'row', marginTop: 10 },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  modalContent: {
-    width: '80%',
-    backgroundColor: 'white',
-    padding: 20,
-    borderRadius: 10,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 15,
-    textAlign: 'center',
-  },
-  childItem: {
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
 });
 
 export default Nutricao;
